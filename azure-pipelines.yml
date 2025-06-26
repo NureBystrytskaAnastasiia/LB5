@@ -1,18 +1,21 @@
 trigger:
-  - main   # або master, залежно від назви гілки
+  - main  # або master, як у тебе в репозиторії
 
 pool:
   vmImage: 'ubuntu-latest'
 
 variables:
   imageName: my-node-app
+  containerRegistry: myyacrregistry.azurecr.io
+  azureSubscription: 'acr-connection'  # ім'я твоєї service connection у Azure DevOps
+  appName: my-webapp-docker
 
 steps:
 - task: Docker@2
   displayName: Build and push Docker image
   inputs:
-    containerRegistry: 'acr-connection'  
-    repository: '$(imageName)'
+    containerRegistry: '$(azureSubscription)'
+    repository: '$(containerRegistry)/$(imageName)'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
     tags: |
@@ -21,7 +24,6 @@ steps:
 - task: AzureWebAppContainer@1
   displayName: Deploy to Azure Web App
   inputs:
-    azureSubscription: 'acr-connection'
-    appName: 'your-app-service-name'                   # назва твого Azure Web App
-    imageName: '$(imageName):latest'
-    containerRegistry: 'myyacrregistry.azurecr.io'
+    azureSubscription: '$(azureSubscription)'
+    appName: '$(appName)'
+    imageName: '$(containerRegistry)/$(imageName):latest'
